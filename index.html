@@ -1,656 +1,774 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alarme de Produtos Vencidos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Scout Futebol Mobile</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --primary: #4a6fa5;
-            --success: #2ec4b6;
-            --warning: #ff9f1c;
-            --danger: #e71d36;
-            --dark: #011627;
-            --light: #f6f8fa;
-            --gray: #6c757d;
-            --border: #ced4da;
-            --whatsapp: #25d366;
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: var(--light);
-            color: var(--dark);
-            padding: 10px;
-        }
-
-        .container {
-            max-width: 950px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        header h1 {
-            color: var(--primary);
-            margin-bottom: 5px;
-            font-size: 1.5rem;
-        }
-
-        /* --- CONTROLE DE TELAS --- */
-        .tela {
-            display: none;
-        }
-        
-        .tela.ativa {
-            display: block;
-        }
-
-        /* --- NOTIFICAÇÃO VISUAL (TOAST) --- */
-        #toast {
-            display: none;
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: var(--success);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 6px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            z-index: 1000;
-        }
-
-        /* --- MENU PRINCIPAL --- */
-        .menu-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            padding: 30px 15px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .btn-menu {
-            width: 100%;
-            max-width: 300px;
-            padding: 18px;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s, background-color 0.2s;
-        }
-
-        .btn-menu.cadastro { background-color: var(--primary); }
-        .btn-menu.consulta { background-color: var(--dark); }
-        .btn-menu.backup { background-color: var(--gray); }
-
-        .btn-voltar {
-            background-color: var(--gray);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            font-size: 14px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-bottom: 15px;
-        }
-
-        /* --- LAYOUT DO CADASTRO --- */
-        .cadastro-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 1fr;
-            gap: 20px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        @media (max-width: 768px) {
-            .cadastro-grid { grid-template-columns: 1fr; }
-            .dashboard { flex-wrap: wrap; }
-            .card { flex: 1 1 45%; font-size: 13px; }
-        }
-
-        .form-group-vertical {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        label {
-            font-weight: 600;
-            font-size: 13px;
-            margin-bottom: 2px;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 14px;
-        }
-
-        /* --- MÓDULO DE MÍDIA / CÂMERA --- */
-        .camera-box {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: #f1f3f5;
-            border: 2px dashed var(--border);
-            border-radius: 8px;
-            padding: 10px;
-        }
-
-        .video-container {
-            width: 100%;
-            max-width: 320px;
-            aspect-ratio: 4/3;
-            background: #000;
-            border-radius: 6px;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #video-preview, #foto-preview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: none; 
-        }
-
-        .camera-controls {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            width: 100%;
-            max-width: 320px;
-        }
-
-        .btn-action {
-            flex: 1;
-            padding: 10px;
-            font-size: 13px;
-            font-weight: bold;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            color: white;
-        }
-        .btn-ativar { background-color: var(--primary); }
-        .btn-capturar { background-color: var(--success); display: none; }
-        .btn-recapturar { background-color: var(--gray); display: none; }
-
-        .btn-submit-cad {
-            background-color: var(--success);
-            color: white;
-            border: none;
-            padding: 14px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 5px;
-        }
-
-        /* --- CONSULTA E DASHBOARD --- */
-        .dashboard {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            gap: 8px;
-        }
-
-        .card {
-            flex: 1;
-            background: white;
-            padding: 12px 5px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        .card.vencidos { border-top: 4px solid var(--danger); color: var(--danger); }
-        .card.alerta { border-top: 4px solid var(--warning); color: var(--warning); }
-        .card.ok { border-top: 4px solid var(--success); color: var(--success); }
-        .card.ativo { background-color: #eee; }
-
-        /* Lista de Produtos Responsiva */
-        .lista-produtos {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-
-        .produto-item {
-            display: grid;
-            grid-template-columns: 50px 1fr auto;
-            grid-template-areas: 
-                "img info acoes"
-                "img status acoes";
-            gap: 10px;
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            align-items: center;
-        }
-
-        @media (min-width: 600px) {
-            .produto-item {
-                grid-template-columns: 60px 1.5fr 1fr 1fr 100px 80px;
-                grid-template-areas: none;
-                display: flex;
-                justify-content: space-between;
-            }
-            .item-img { width: 60px; }
-            .item-info { flex: 2; }
-            .item-data { flex: 1; text-align: center; }
-            .item-status { flex: 1; text-align: center; }
-            .item-acoes { flex: 0.8; display: flex; gap: 10px; justify-content: flex-end; }
-        }
-
-        /* Mobile Adjustments */
-        @media (max-width: 599px) {
-            .item-img { grid-area: img; }
-            .item-info { grid-area: info; }
-            .item-status { grid-area: status; }
-            .item-acoes { 
-                grid-area: acoes; 
-                display: flex; 
-                flex-direction: column; 
-                gap: 15px;
-                align-items: center;
-            }
-            .item-data { display: none; } 
-        }
-
-        .img-produto-lista {
-            width: 50px;
-            height: 50px;
-            border-radius: 6px;
-            object-fit: cover;
-            border: 1px solid var(--border);
-        }
-
-        .status-badge {
-            padding: 4px 8px;
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
             border-radius: 4px;
-            font-size: 11px;
-            font-weight: bold;
-            display: inline-block;
         }
-
-        .status-vencido { background-color: #ffe5e5; color: var(--danger); }
-        .status-alerta { background-color: #fff3cd; color: var(--warning); }
-        .status-bom { background-color: #e8f7f5; color: var(--success); }
-
-        .btn-deletar {
-            background-color: transparent;
-            color: var(--danger);
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .btn-active:active {
+            transform: scale(0.93);
         }
-
-        .btn-whatsapp {
-            background-color: transparent;
-            color: var(--whatsapp);
-            border: none;
-            cursor: pointer;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .icon-trash {
-            width: 20px;
-            height: 20px;
-            fill: currentColor;
-        }
-
-        /* --- ESTILO TELA BACKUP --- */
-        .backup-container {
-            background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .btn-backup-op {
-            padding: 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: var(--light);
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.2s;
-        }
-
-        .btn-backup-op:hover {
-            background: #e9ecef;
+        button {
+            touch-action: manipulation;
         }
     </style>
 </head>
-<body>
+<body class="bg-gray-950 text-gray-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
 
-<div id="toast">Operação realizada com sucesso!</div>
+    <!-- TOP FIXED HEADER: MATCH TIMER & MAIN CONTROLS -->
+    <header class="sticky top-0 z-30 bg-gray-900/95 backdrop-blur border-b border-gray-800 shadow-md px-3 py-2">
+        <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+            <div>
+                <h1 class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                    <i data-lucide="activity" class="w-3.5 h-3.5"></i> Scout Mobile
+                </h1>
+                <div class="text-lg font-black font-mono tracking-tight text-white leading-tight" id="main-timer-display">
+                    00:00
+                </div>
+            </div>
 
-<div class="container">
-    <header>
-        <h1>Sistema De Controle</h1>
-        <p>Controle de Validade</p>
+            <div class="flex items-center gap-1.5">
+                <!-- Undo Action Button -->
+                <button id="btn-undo" onclick="undoLastAction()" title="Desfazer última ação" 
+                        class="btn-active p-2 bg-gray-800 hover:bg-gray-700 text-amber-400 border border-gray-700 rounded-lg flex items-center justify-center transition disabled:opacity-30" disabled>
+                    <i data-lucide="undo-2" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Add Player Modal Trigger -->
+                <button onclick="openAddPlayerModal()" title="Cadastrar Atleta"
+                        class="btn-active p-2 bg-gray-800 hover:bg-gray-700 text-blue-400 border border-gray-700 rounded-lg flex items-center justify-center transition">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                </button>
+
+                <!-- Start / Finish Match Toggle -->
+                <button id="btn-toggle-match" onclick="toggleMatchState()" 
+                        class="btn-active px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 transition">
+                    <i data-lucide="play" id="icon-match-state" class="w-3.5 h-3.5 fill-current"></i>
+                    <span id="text-match-state">INICIAR PARTIDA</span>
+                </button>
+            </div>
+        </div>
     </header>
 
-    <div id="tela-menu" class="tela ativa">
-        <div class="menu-container">
-            <button class="btn-menu cadastro" onclick="mudarTela('tela-cadastro')">📦 Cadastrar Produto</button>
-            <button class="btn-menu consulta" onclick="mudarTela('tela-consulta')">🔍 Consultar Estoque</button>
-            <button class="btn-menu backup" onclick="mudarTela('tela-backup')">💾 Backup de Dados</button>
+    <main class="flex-1 max-w-md w-full mx-auto p-2 space-y-3 pb-20">
+
+        <!-- Recent Event Feed Box -->
+        <section class="bg-gray-900/70 border border-gray-800 rounded-lg p-2 shadow-sm">
+            <div class="flex items-center justify-between text-[11px] font-medium text-gray-400 mb-1">
+                <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3 text-emerald-400"></i> Último Lance</span>
+                <button onclick="openFeedModal()" class="text-emerald-400 hover:underline text-[10px] font-semibold">Histórico (<span id="feed-count">0</span>)</button>
+            </div>
+            <div id="latest-event-box" class="text-[11px] text-gray-300 bg-gray-950 p-1.5 rounded border border-gray-800/80 font-mono italic truncate">
+                Aguardando início da partida...
+            </div>
+        </section>
+
+        <!-- STARTERS SECTION -->
+        <section class="space-y-1">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Titulares (<span id="starters-count">0</span>)
+                </h2>
+                <span class="text-[9px] text-gray-500 uppercase font-bold">Botões de Ação</span>
+            </div>
+
+            <!-- Vertical Single Column List for Starters -->
+            <div id="starters-list" class="space-y-1.5">
+                <!-- Rendered dynamically -->
+            </div>
+        </section>
+
+        <!-- RESERVES SECTION -->
+        <section class="space-y-1 pt-2">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-[11px] font-black uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-gray-500"></span>
+                    Reservas (<span id="reserves-count">0</span>)
+                </h2>
+            </div>
+
+            <!-- Vertical Single Column List for Substitutes -->
+            <div id="reserves-list" class="space-y-1.5">
+                <!-- Rendered dynamically -->
+            </div>
+        </section>
+    </main>
+
+    <!-- BOTTOM FIXED BAR -->
+    <footer class="fixed bottom-0 left-0 right-0 z-20 bg-gray-900/95 backdrop-blur border-t border-gray-800 p-2 shadow-2xl">
+        <div class="max-w-md mx-auto flex items-center justify-between gap-2">
+            <button onclick="openReportModal()" class="btn-active flex-1 py-2.5 px-3 bg-gradient-to-r from-gray-800 to-gray-700 hover:from-gray-700 hover:to-gray-600 border border-gray-700 text-emerald-400 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 shadow">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                RELATÓRIO DA PARTIDA
+            </button>
+            <button onclick="confirmResetAll()" class="btn-active p-2.5 bg-red-950/40 border border-red-900/60 text-red-400 rounded-xl hover:bg-red-900/50 transition flex items-center justify-center" title="Nova Partida">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: ADD PLAYER -->
+    <div id="modal-add-player" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                    <i data-lucide="user-plus" class="w-4 h-4 text-emerald-400"></i> Cadastrar Atleta
+                </h3>
+                <button onclick="closeModal('modal-add-player')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form onsubmit="handleAddPlayerSubmit(event)" class="space-y-3">
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Número / ID</label>
+                    <input type="text" id="input-player-num" required placeholder="Ex: 10" 
+                           class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Nome do Atleta</label>
+                    <input type="text" id="input-player-name" required placeholder="Ex: Gabriel Camisa" 
+                           class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-400 mb-1">Posição Inicial</label>
+                    <select id="select-player-status" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                        <option value="starter">Titular</option>
+                        <option value="reserve">Reserva (Banco)</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition">
+                    Adicionar ao Elenco
+                </button>
+            </form>
         </div>
     </div>
 
-    <div id="tela-cadastro" class="tela">
-        <button class="btn-voltar" onclick="fecharCameraELimpar(); mudarTela('tela-menu');">← Voltar</button>
-        <div class="cadastro-grid">
-            <form id="form-produto" class="form-group-vertical">
-                <h3 style="color: var(--primary);">Novo Registro</h3>
+    <!-- MODAL 2: SUBSTITUTION MENU -->
+    <div id="modal-substitute" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                    <i data-lucide="arrow-right-left" class="w-4 h-4 text-amber-400"></i> Substituição
+                </h3>
+                <button onclick="closeModal('modal-substitute')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="space-y-3">
                 <div>
-                    <label>Código (EAN)</label>
-                    <input type="text" id="codigo" required>
+                    <label class="block text-[11px] font-semibold text-red-400 mb-1">SAI (Titular Ativo):</label>
+                    <div id="sub-outgoing-name" class="p-2.5 bg-gray-950 border border-red-950/80 rounded-xl text-xs font-bold text-red-200">
+                        <!-- Filled by JS -->
+                    </div>
                 </div>
+
                 <div>
-                    <label>Nome</label>
-                    <input type="text" id="nome" required>
+                    <label class="block text-[11px] font-semibold text-emerald-400 mb-1">ENTRA (Reserva Selecionado):</label>
+                    <select id="select-sub-incoming" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                        <!-- Options filled by JS -->
+                    </select>
                 </div>
-                <div>
-                    <label>Lote</label>
-                    <input type="text" id="lote">
-                </div>
-                <div>
-                    <label>Vencimento</label>
-                    <input type="date" id="validade" required>
-                </div>
-                <button type="submit" class="btn-submit-cad">Salvar</button>
-            </form>
-<!--CRIADO POR JHONES-->
-            <div class="camera-box">
-                <div class="video-container">
-                    <div id="placeholder-text" class="placeholder-camera" style="font-size:12px; padding:10px;">Câmera desligada</div>
-                    <video id="video-preview" autoplay playsinline></video>
-                    <img id="foto-preview" alt="Preview">
-                </div>
-                <div class="camera-controls">
-                    <button type="button" id="btn-ativar-cam" class="btn-action btn-ativar" onclick="inicializarCamera()">Ativar</button>
-                    <button type="button" id="btn-capturar" class="btn-action btn-capturar" onclick="capturarFoto()">Foto</button>
-                    <button type="button" id="btn-recapturar" class="btn-action btn-recapturar" onclick="limparFotoERestartar()">Nova</button>
-                </div>
+
+                <button onclick="confirmSubstitution()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-gray-950 font-black rounded-xl text-xs uppercase tracking-wider transition">
+                    Confirmar Troca
+                </button>
             </div>
         </div>
     </div>
 
-    <div id="tela-consulta" class="tela">
-        <button class="btn-voltar" onclick="mudarTela('tela-menu')">← Voltar</button>
-        <div class="dashboard">
-            <div id="card-vencidos" class="card vencidos" onclick="alternarFiltro('vencido')">Vencidos <br><span id="qtd-vencidos">0</span></div>
-            <div id="card-alerta" class="card alerta" onclick="alternarFiltro('alerta')">Alerta <br><span id="qtd-alerta">0</span></div>
-            <div id="card-ok" class="card ok" onclick="alternarFiltro('ok')">Ok <br><span id="qtd-ok">0</span></div>
-        </div>
-        <div class="lista-produtos" id="lista-produtos"></div>
-    </div>
+    <!-- MODAL 3: FULL EVENT FEED -->
+    <div id="modal-feed" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 w-full max-w-md h-[80vh] flex flex-col justify-between shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                    <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i> Cronologia da Partida
+                </h3>
+                <button onclick="closeModal('modal-feed')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
 
-    <div id="tela-backup" class="tela">
-        <button class="btn-voltar" onclick="mudarTela('tela-menu')">← Voltar</button>
-        <div class="backup-container">
-            <h3 style="color: var(--primary);">Gerenciamento de Dados</h3>
-            <p>Exporte seus dados para segurança ou importe um arquivo existente.</p>
-            <button class="btn-backup-op" onclick="exportarDados()">📤 Exportar Banco de Dados (.json)</button>
-            <hr>
-            <label for="input-import" class="btn-backup-op" style="display:block;">📥 Importar Banco de Dados (.json)</label>
-            <input type="file" id="input-import" accept=".json" style="display:none;" onchange="importarDados(event)">
+            <div id="feed-events-list" class="flex-1 overflow-y-auto my-3 space-y-1.5 pr-1 font-mono text-xs">
+                <!-- Filled dynamically -->
+            </div>
+
+            <button onclick="closeModal('modal-feed')" class="w-full py-2 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl text-xs">
+                Fechar
+            </button>
         </div>
     </div>
-</div>
 
-<script>
-    let produtos = JSON.parse(localStorage.getItem('produtos_validade')) || [];
-    let streamVideo = null;
-    let fotoBase64Global = "";
-    let filtroAtivoGlobal = null;
+    <!-- MODAL 4: FULL MATCH REPORT -->
+    <div id="modal-report" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-4 w-full max-w-md max-h-[90vh] flex flex-col justify-between shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-800 pb-2">
+                <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                    <i data-lucide="award" class="w-4 h-4 text-emerald-400"></i> Relatório Final da Partida
+                </h3>
+                <button onclick="closeModal('modal-report')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
 
-    const form = document.getElementById('form-produto');
-    const listaContainer = document.getElementById('lista-produtos');
-    const video = document.getElementById('video-preview');
-    const imgPreview = document.getElementById('foto-preview');
-    const placeholderText = document.getElementById('placeholder-text');
-    const toast = document.getElementById('toast');
-    
-    const btnAtivar = document.getElementById('btn-ativar-cam');
-    const btnCapturar = document.getElementById('btn-capturar');
-    const btnRecapturar = document.getElementById('btn-recapturar');
-
-    const iconLixeira = `<svg class="icon-trash" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
-    const iconWhats = `<svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-2.32 0-4.519.903-6.16 2.544-1.64 1.64-2.543 3.838-2.543 6.158 0 1.61.442 3.185 1.28 4.556l-1.362 4.978 5.093-1.336c1.32.715 2.801 1.092 4.31 1.093h.005c2.32 0 4.52-.903 6.16-2.544 1.64-1.64 2.544-3.838 2.544-6.158 0-4.83-3.929-8.759-8.759-8.759zm4.942 12.392c-.217.611-1.258 1.134-1.748 1.205-.49.071-1.127.127-1.808-.093-.408-.133-2.316-.883-4.417-2.757-1.721-1.536-2.884-3.435-3.224-4.015-.34-.58-.036-.894.254-1.183.26-.26.577-.667.866-1 .289-.334.385-.572.577-.953.193-.38.096-.714-.048-1-.144-.286-1.299-3.129-1.78-4.286-.469-1.127-.945-.974-1.299-.991-.338-.017-.724-.02-1.109-.02s-1.011.144-1.54.722c-.528.578-2.021 1.977-2.021 4.82 0 2.843 2.07 5.594 2.358 5.979.289.385 4.074 6.22 9.868 8.719 1.378.594 2.454.949 3.293 1.215 1.383.44 2.642.378 3.637.23.111-.167 3.327-1.36 3.791-2.673z"/></svg>`;
-
-    function exibirToast(mensagem) {
-        if(mensagem) toast.innerText = mensagem;
-        toast.style.display = 'block';
-        setTimeout(() => { toast.style.display = 'none'; }, 3000);
-    }
-
-    function mudarTela(idTela) {
-        document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
-        document.getElementById(idTela).classList.add('ativa');
-        if (idTela === 'tela-consulta') filtroAtivoGlobal = null;
-        fecharCameraELimpar();
-        renderizarProdutos();
-    }
-
-    async function inicializarCamera() {
-        try {
-            streamVideo = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "environment", width: 640 },
-                audio: false 
-            });
-            video.srcObject = streamVideo;
-            placeholderText.style.display = "none";
-            video.style.display = "block";
-            btnAtivar.style.display = "none";
-            btnCapturar.style.display = "block";
-        } catch (err) {
-            alert("Erro ao acessar câmera.");
-        }
-    }
-
-    function capturarFoto() {
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-        fotoBase64Global = canvas.toDataURL('image/jpeg', 0.7);
-        imgPreview.src = fotoBase64Global;
-        video.style.display = "none"; imgPreview.style.display = "block";
-        btnCapturar.style.display = "none"; btnRecapturar.style.display = "block";
-        if (streamVideo) streamVideo.getTracks().forEach(t => t.stop());
-    }
-
-    function limparFotoERestartar() {
-        fotoBase64Global = "";
-        inicializarCamera();
-    }
-
-    function fecharCameraELimpar() {
-        if (streamVideo) streamVideo.getTracks().forEach(t => t.stop());
-        streamVideo = null; fotoBase64Global = "";
-        video.style.display = "none"; imgPreview.style.display = "none";
-        placeholderText.style.display = "block";
-        btnAtivar.style.display = "block"; btnCapturar.style.display = "none"; btnRecapturar.style.display = "none";
-    }
-
-    function formatarData(dataString) {
-        const [ano, mes, dia] = dataString.split('-');
-        return `${dia}/${mes}/${ano}`;
-    }
-
-    function alternarFiltro(tipo) {
-        filtroAtivoGlobal = (filtroAtivoGlobal === tipo) ? null : tipo;
-        renderizarProdutos();
-    }
-
-    function enviarWhatsApp(index) {
-        const prod = produtos[index];
-        const telefone = prompt("Número WhatsApp (com DDD):");
-        if (!telefone) return;
-        const qtd = prompt("Quantidade:");
-        const valor = prompt("Valor Atual:");
-
-        const msg = `*ALERTA DE PRODUTO*%0A*Nome:* ${prod.nome}%0A*Cod:* ${prod.codigo}%0A*Vencimento:* ${formatarData(prod.validade)}%0A*Qtd:* ${qtd}%0A*Valor:* R$ ${valor}`;
-        window.open(`https://api.whatsapp.com/send?phone=55${telefone.replace(/\D/g,'')}&text=${msg}`, '_blank');
-    }
-
-    function exportarDados() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(produtos));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "backup_estoque_" + new Date().toLocaleDateString() + ".json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-        exibirToast("Backup exportado!");
-    }
-
-    function importarDados(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const dadosImportados = JSON.parse(e.target.result);
-                if (Array.isArray(dadosImportados)) {
-                    if(confirm("Deseja Mesclar ou Substituir? Clique OK para MESCLAR (verificando duplicados) ou Cancelar para substituir tudo.")) {
-                        dadosImportados.forEach(novoProd => {
-                            const duplicado = produtos.find(p => 
-                                p.codigo === novoProd.codigo && 
-                                p.nome === novoProd.nome && 
-                                p.lote === novoProd.lote && 
-                                p.validade === novoProd.validade
-                            );
-                            
-                            if (duplicado) {
-                                if (confirm(`O produto "${novoProd.nome}" (Lote: ${novoProd.lote}) já existe exatamente igual. Deseja importar duplicado?`)) {
-                                    produtos.push(novoProd);
-                                }
-                            } else {
-                                produtos.push(novoProd);
-                            }
-                        });
-                    } else {
-                        produtos = dadosImportados;
-                    }
-                    localStorage.setItem('produtos_validade', JSON.stringify(produtos));
-                    renderizarProdutos();
-                    exibirToast("Processo concluído!");
-                } else {
-                    alert("Arquivo inválido!");
-                }
-            } catch (err) {
-                alert("Erro ao ler arquivo!");
-            }
-        };
-        reader.readAsText(file);
-        event.target.value = ''; 
-    }
-
-    function renderizarProdutos() {
-        listaContainer.innerHTML = '';
-        const hoje = new Date(); hoje.setHours(0,0,0,0);
-        let cV = 0, cA = 0, cO = 0;
-
-        produtos.sort((a,b) => new Date(a.validade) - new Date(b.validade));
-
-        produtos.forEach((prod, index) => {
-            const dataV = new Date(prod.validade); dataV.setHours(24,0,0,0);
-            const diff = Math.ceil((dataV - hoje) / (86400000));
-            
-            let statusT = '', statusC = '', tipo = '';
-            if (diff < 0) { statusT = 'Vencido'; statusC = 'status-vencido'; tipo = 'vencido'; cV++; }
-            else if (diff <= 7) { statusT = `Vence em ${diff}d`; statusC = 'status-alerta'; tipo = 'alerta'; cA++; }
-            else { statusT = `${diff} dias`; statusC = 'status-bom'; tipo = 'ok'; cO++; }
-
-            if (filtroAtivoGlobal && filtroAtivoGlobal !== tipo) return;
-
-            const img = prod.foto ? `<img src="${prod.foto}" class="img-produto-lista">` : `<div class="img-produto-lista" style="background:#eee"></div>`;
-            
-            const div = document.createElement('div');
-            div.className = 'produto-item';
-            div.innerHTML = `
-                <div class="item-img">${img}</div>
-                <div class="item-info"><strong>${prod.nome}</strong><br><small>${prod.codigo}</small></div>
-                <div class="item-data">${formatarData(prod.validade)}</div>
-                <div class="item-status"><span class="status-badge ${statusC}">${statusT}</span></div>
-                <div class="item-acoes">
-                    <button class="btn-whatsapp" onclick="enviarWhatsApp(${index})">${iconWhats}</button>
-                    <button class="btn-deletar" onclick="removerProduto(${index})">${iconLixeira}</button>
+            <!-- Printable Report Area -->
+            <div id="printable-report" class="flex-1 overflow-y-auto my-3 space-y-3 pr-1 text-xs">
+                
+                <!-- Team Summary Stats -->
+                <div class="bg-gray-950 p-2.5 rounded-xl border border-gray-800">
+                    <h4 class="font-bold text-emerald-400 uppercase mb-2 border-b border-gray-800 pb-1 text-[10px] tracking-wider">Totais Coletivos</h4>
+                    <div class="grid grid-cols-5 gap-1 text-center">
+                        <div class="bg-gray-900 p-1 rounded">
+                            <span class="block font-black text-xs text-emerald-400" id="rep-team-g">0</span>
+                            <span class="text-[8px] text-gray-400 uppercase font-bold">Gols</span>
+                        </div>
+                        <div class="bg-gray-900 p-1 rounded">
+                            <span class="block font-black text-xs text-blue-400" id="rep-team-a">0</span>
+                            <span class="text-[8px] text-gray-400 uppercase font-bold">Assist</span>
+                        </div>
+                        <div class="bg-gray-900 p-1 rounded">
+                            <span class="block font-black text-xs text-amber-400" id="rep-team-d">0</span>
+                            <span class="text-[8px] text-gray-400 uppercase font-bold">Def</span>
+                        </div>
+                        <div class="bg-gray-900 p-1 rounded">
+                            <span class="block font-black text-xs text-indigo-400" id="rep-team-p">0</span>
+                            <span class="text-[8px] text-gray-400 uppercase font-bold">Passes</span>
+                        </div>
+                        <div class="bg-gray-900 p-1 rounded">
+                            <span class="block font-black text-xs text-red-400" id="rep-team-bp">0</span>
+                            <span class="text-[8px] text-gray-400 uppercase font-bold">Perdidas</span>
+                        </div>
+                    </div>
                 </div>
-            `;
-            listaContainer.appendChild(div);
-        });
 
-        document.getElementById('qtd-vencidos').innerText = cV;
-        document.getElementById('qtd-alerta').innerText = cA;
-        document.getElementById('qtd-ok').innerText = cO;
-    }
+                <!-- Individual Stats Table with full counters -->
+                <div class="bg-gray-950 p-2.5 rounded-xl border border-gray-800">
+                    <h4 class="font-bold text-emerald-400 uppercase mb-2 border-b border-gray-800 pb-1 text-[10px] tracking-wider">Estatísticas Consolidadas</h4>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left font-mono text-[10px]">
+                            <thead>
+                                <tr class="text-gray-500 border-b border-gray-800">
+                                    <th class="py-1">Atleta</th>
+                                    <th class="text-center">Min</th>
+                                    <th class="text-center text-emerald-400">GOL</th>
+                                    <th class="text-center text-blue-400">ASS</th>
+                                    <th class="text-center text-amber-400">DEF</th>
+                                    <th class="text-center text-indigo-400">PASS</th>
+                                    <th class="text-center text-red-400">BOLA P</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rep-players-tbody" class="divide-y divide-gray-900 text-gray-300">
+                                <!-- Filled by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        produtos.push({
-            codigo: document.getElementById('codigo').value,
-            nome: document.getElementById('nome').value,
-            lote: document.getElementById('lote').value,
-            validade: document.getElementById('validade').value,
-            foto: fotoBase64Global
-        });
-        localStorage.setItem('produtos_validade', JSON.stringify(produtos));
-        form.reset(); fecharCameraELimpar(); exibirToast("Produto salvo!"); mudarTela('tela-menu');
-    });
+                <!-- Match Timeline Log -->
+                <div class="bg-gray-950 p-2.5 rounded-xl border border-gray-800">
+                    <h4 class="font-bold text-emerald-400 uppercase mb-2 border-b border-gray-800 pb-1 text-[10px] tracking-wider">Linha do Tempo das Ações</h4>
+                    <div id="rep-timeline-list" class="space-y-1 font-mono text-[10px]">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
 
-    window.removerProduto = function(index) {
-        if(confirm("Excluir produto?")) {
-            produtos.splice(index, 1);
-            localStorage.setItem('produtos_validade', JSON.stringify(produtos));
-            renderizarProdutos();
+            <!-- Modal Action Buttons -->
+            <div class="pt-2 border-t border-gray-800 flex gap-2">
+                <button onclick="window.print()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i> Imprimir / Exportar PDF
+                </button>
+                <button onclick="closeModal('modal-report')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold rounded-xl text-xs">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default Squad Array
+        const DEFAULT_PLAYERS = [
+            { id: 'p1', num: '01', name: 'Alisson (GKL)', status: 'starter', stats: { g: 0, a: 0, d: 0, p: 0, bp: 0 }, playedSeconds: 0 },
+            { id: 'p2', num: '04', name: 'Van Dijk', status: 'starter', stats: { g: 0, a: 0, d: 0, p: 0, bp: 0 }, playedSeconds: 0 },
+            { id: 'p3', num: '08', name: 'Szoboszlai', status: 'starter', stats: { g: 0, a: 0, d: 0, p: 0, bp: 0 }, playedSeconds: 0 },
+            { id: 'p4', num: '10', name: 'Mac Allister', status: 'starter', stats: { g: 0, a: 0, d: 0, p: 0, bp: 0 }, playedSeconds: 0 },
+            { id: 'p5', num: '11', name: 'Salah', status: 'starter', stats: { g: 0, a: 0, d: 0, p: 0, bp: 0 }, playedSeconds: 0 },
+            { id: 'p6', num: '09', name: 'Darwin Núñez', status: 'reserve', stats: { g: 0, a: 0, d: 0, p: 0, bp: 0 }, playedSeconds: 0 },
+            { id: 'p7', num: '20', name: 'Diogo Jota', status: 'reserve', stats: { g: 0, a: 0, d: 0, p: 0, bp: 0 }, playedSeconds: 0 }
+        ];
+
+        // Application State
+        let state = {
+            matchStarted: false,
+            matchSeconds: 0,
+            players: [],
+            events: []
+        };
+
+        let outgoingPlayerForSub = null;
+
+        window.onload = function() {
+            loadState();
+            renderAll();
+            lucide.createIcons();
+
+            // Active match seconds accumulator ticker
+            setInterval(tickTimers, 1000);
+        };
+
+        function loadState() {
+            const saved = localStorage.getItem('scout_football_mobile_v3');
+            if (saved) {
+                try {
+                    state = JSON.parse(saved);
+                } catch(e) {
+                    state.players = JSON.parse(JSON.stringify(DEFAULT_PLAYERS));
+                }
+            } else {
+                state.players = JSON.parse(JSON.stringify(DEFAULT_PLAYERS));
+            }
         }
-    };
 
-    renderizarProdutos();
-</script>
+        function saveState() {
+            localStorage.setItem('scout_football_mobile_v3', JSON.stringify(state));
+        }
+
+        function toggleMatchState() {
+            state.matchStarted = !state.matchStarted;
+            saveState();
+            renderHeaderTimer();
+            logEventSystem(state.matchStarted ? "Partida Iniciada" : "Partida Pausada / Finalizada");
+
+            if (!state.matchStarted) {
+                openReportModal();
+            }
+        }
+
+        function tickTimers() {
+            if (!state.matchStarted) return;
+
+            state.matchSeconds++;
+
+            // Accumulate active time for starters only
+            state.players.forEach(p => {
+                if (p.status === 'starter') {
+                    p.playedSeconds = (p.playedSeconds || 0) + 1;
+                }
+            });
+
+            renderHeaderTimer();
+            updateLiveTimersInUI();
+            saveState();
+        }
+
+        function formatMMSS(sec) {
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const s = (sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function formatMinOnly(sec) {
+            return `${Math.floor(sec / 60)}'`;
+        }
+
+        function renderAll() {
+            renderHeaderTimer();
+            renderPlayerLists();
+            renderRecentFeed();
+            lucide.createIcons();
+        }
+
+        function renderHeaderTimer() {
+            const display = document.getElementById('main-timer-display');
+            const btnState = document.getElementById('text-match-state');
+            const iconState = document.getElementById('icon-match-state');
+            const btnToggle = document.getElementById('btn-toggle-match');
+
+            display.textContent = formatMMSS(state.matchSeconds);
+
+            if (state.matchStarted) {
+                btnState.textContent = "FINALIZAR PARTIDA";
+                iconState.setAttribute('data-lucide', 'square');
+                btnToggle.className = "btn-active px-3 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 transition";
+            } else {
+                btnState.textContent = state.matchSeconds > 0 ? "RETOMAR PARTIDA" : "INICIAR PARTIDA";
+                iconState.setAttribute('data-lucide', 'play');
+                btnToggle.className = "btn-active px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-sm flex items-center gap-1 transition";
+            }
+
+            const undoBtn = document.getElementById('btn-undo');
+            undoBtn.disabled = state.events.length === 0;
+        }
+
+        function updateLiveTimersInUI() {
+            state.players.forEach(p => {
+                const el = document.getElementById(`timer-p-${p.id}`);
+                if (el) {
+                    el.textContent = formatMMSS(p.playedSeconds || 0);
+                }
+            });
+        }
+
+        function renderPlayerLists() {
+            const startersContainer = document.getElementById('starters-list');
+            const reservesContainer = document.getElementById('reserves-list');
+
+            const starters = state.players.filter(p => p.status === 'starter');
+            const reserves = state.players.filter(p => p.status === 'reserve');
+
+            document.getElementById('starters-count').textContent = starters.length;
+            document.getElementById('reserves-count').textContent = reserves.length;
+
+            startersContainer.innerHTML = starters.length 
+                ? starters.map(p => createPlayerCardHTML(p, true)).join('') 
+                : '<div class="text-[11px] text-gray-500 italic p-2 text-center bg-gray-900/40 rounded-xl">Nenhum titular cadastrado.</div>';
+            
+            reservesContainer.innerHTML = reserves.length 
+                ? reserves.map(p => createPlayerCardHTML(p, false)).join('') 
+                : '<div class="text-[11px] text-gray-500 italic p-2 text-center bg-gray-900/40 rounded-xl">Banco de reservas vazio.</div>';
+        }
+
+        /* 
+           Mobile Card Layout (Column format):
+           Row 1: #ID, Player Name, Tag, Minutagem, Sub, Del
+           Row 2: Action Buttons (GOL, ASS, DEF, PASS, BOLA P)
+        */
+        function createPlayerCardHTML(p, isStarter) {
+            const cardBg = isStarter ? 'bg-gray-900 border-gray-800' : 'bg-gray-900/50 border-gray-800/60 opacity-80';
+
+            return `
+            <div class="p-2 border ${cardBg} rounded-xl shadow-sm flex flex-col gap-1.5 transition">
+                
+                <!-- ROW 1: NUMBER, NAME, STATUS TAG, TIMER & CONTROL BUTTONS -->
+                <div class="flex items-center justify-between gap-1.5">
+                    
+                    <!-- Left: ID/Num + Tag + Player Name + Active Timer -->
+                    <div class="flex items-center gap-1.5 min-w-0">
+                        <span class="bg-gray-950 text-gray-300 border border-gray-800 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded">
+                            #${p.num}
+                        </span>
+                        <span class="text-[9px] font-extrabold px-1 py-0.5 rounded ${isStarter ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-gray-800 text-gray-400'}">
+                            ${isStarter ? 'TIT' : 'RES'}
+                        </span>
+                        <span class="font-bold text-xs text-white truncate max-w-[120px]" title="${p.name}">${p.name}</span>
+                        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-950/40 border border-emerald-900/40 px-1 rounded" id="timer-p-${p.id}">
+                            ${formatMMSS(p.playedSeconds || 0)}
+                        </span>
+                    </div>
+
+                    <!-- Right: Sub / Change Status Button + Delete -->
+                    <div class="flex items-center gap-1">
+                        ${isStarter ? `
+                            <button onclick="openSubstituteModal('${p.id}')" 
+                                    class="btn-active px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[10px] font-bold flex items-center gap-0.5">
+                                <i data-lucide="arrow-right-left" class="w-3 h-3"></i> Sub
+                            </button>
+                        ` : `
+                            <button onclick="promoteToStarter('${p.id}')" 
+                                    class="btn-active px-2 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-[10px] font-bold flex items-center gap-0.5">
+                                <i data-lucide="arrow-up" class="w-3 h-3"></i> Entrar
+                            </button>
+                        `}
+                        <button onclick="removePlayer('${p.id}')" class="text-gray-600 hover:text-red-400 p-1" title="Remover Atleta">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- ROW 2: SMALL ACTION BUTTONS WITH FULL TEXT LABELS (GOL, ASS, DEF, PASS, BOLA P) -->
+                <div class="grid grid-cols-5 gap-1 pt-0.5 border-t border-gray-800/50">
+                    <button onclick="addStat('${p.id}', 'g', 'Gol')" 
+                            class="btn-active py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[9px] sm:text-[10px] rounded shadow-sm text-center uppercase tracking-tighter">
+                        GOL
+                    </button>
+                    <button onclick="addStat('${p.id}', 'a', 'Assistência')" 
+                            class="btn-active py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-[9px] sm:text-[10px] rounded shadow-sm text-center uppercase tracking-tighter">
+                        ASS
+                    </button>
+                    <button onclick="addStat('${p.id}', 'd', 'Defesa')" 
+                            class="btn-active py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-black text-[9px] sm:text-[10px] rounded shadow-sm text-center uppercase tracking-tighter">
+                        DEF
+                    </button>
+                    <button onclick="addStat('${p.id}', 'p', 'Passe')" 
+                            class="btn-active py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-[9px] sm:text-[10px] rounded shadow-sm text-center uppercase tracking-tighter">
+                        PASS
+                    </button>
+                    <button onclick="addStat('${p.id}', 'bp', 'Bola Perdida')" 
+                            class="btn-active py-1.5 bg-red-600 hover:bg-red-500 text-white font-black text-[9px] sm:text-[10px] rounded shadow-sm text-center uppercase tracking-tighter">
+                        BOLA P
+                    </button>
+                </div>
+
+            </div>
+            `;
+        }
+
+        function addStat(playerId, statKey, statName) {
+            const player = state.players.find(p => p.id === playerId);
+            if (!player) return;
+
+            player.stats[statKey]++;
+
+            const eventObj = {
+                id: Date.now(),
+                timeSec: state.matchSeconds,
+                timeFormatted: formatMinOnly(state.matchSeconds),
+                playerId: player.id,
+                playerName: `#${player.num} ${player.name}`,
+                type: 'stat',
+                statKey: statKey,
+                label: `${statName} por #${player.num} ${player.name}`
+            };
+
+            state.events.unshift(eventObj);
+            saveState();
+            renderAll();
+        }
+
+        function undoLastAction() {
+            if (state.events.length === 0) return;
+
+            const lastEvent = state.events.shift();
+
+            if (lastEvent.type === 'stat' && lastEvent.playerId) {
+                const player = state.players.find(p => p.id === lastEvent.playerId);
+                if (player && player.stats[lastEvent.statKey] > 0) {
+                    player.stats[lastEvent.statKey]--;
+                }
+            } else if (lastEvent.type === 'sub') {
+                const outP = state.players.find(p => p.id === lastEvent.outgoingId);
+                const inP = state.players.find(p => p.id === lastEvent.incomingId);
+                if (outP) outP.status = 'starter';
+                if (inP) inP.status = 'reserve';
+            }
+
+            saveState();
+            renderAll();
+        }
+
+        function logEventSystem(message) {
+            state.events.unshift({
+                id: Date.now(),
+                timeSec: state.matchSeconds,
+                timeFormatted: formatMinOnly(state.matchSeconds),
+                type: 'system',
+                label: message
+            });
+            saveState();
+            renderAll();
+        }
+
+        function openSubstituteModal(outgoingId) {
+            outgoingPlayerForSub = state.players.find(p => p.id === outgoingId);
+            if (!outgoingPlayerForSub) return;
+
+            const reserves = state.players.filter(p => p.status === 'reserve');
+            const selectEl = document.getElementById('select-sub-incoming');
+
+            if (reserves.length === 0) {
+                alert('Não há jogadores no banco de reservas para realizar a substituição!');
+                return;
+            }
+
+            document.getElementById('sub-outgoing-name').textContent = `#${outgoingPlayerForSub.num} ${outgoingPlayerForSub.name}`;
+
+            selectEl.innerHTML = reserves.map(r => `
+                <option value="${r.id}">#${r.num} ${r.name}</option>
+            `).join('');
+
+            openModal('modal-substitute');
+        }
+
+        function confirmSubstitution() {
+            if (!outgoingPlayerForSub) return;
+
+            const incomingId = document.getElementById('select-sub-incoming').value;
+            const incomingPlayer = state.players.find(p => p.id === incomingId);
+
+            if (!incomingPlayer) return;
+
+            outgoingPlayerForSub.status = 'reserve';
+            incomingPlayer.status = 'starter';
+
+            state.events.unshift({
+                id: Date.now(),
+                timeSec: state.matchSeconds,
+                timeFormatted: formatMinOnly(state.matchSeconds),
+                type: 'sub',
+                outgoingId: outgoingPlayerForSub.id,
+                incomingId: incomingPlayer.id,
+                label: `Substituição: Sai #${outgoingPlayerForSub.num} ${outgoingPlayerForSub.name}, Entra #${incomingPlayer.num} ${incomingPlayer.name}`
+            });
+
+            outgoingPlayerForSub = null;
+            closeModal('modal-substitute');
+            saveState();
+            renderAll();
+        }
+
+        function promoteToStarter(playerId) {
+            const p = state.players.find(item => item.id === playerId);
+            if (p) {
+                p.status = 'starter';
+                logEventSystem(`#${p.num} ${p.name} entrou em campo.`);
+            }
+        }
+
+        function openAddPlayerModal() {
+            document.getElementById('input-player-num').value = '';
+            document.getElementById('input-player-name').value = '';
+            openModal('modal-add-player');
+        }
+
+        function handleAddPlayerSubmit(e) {
+            e.preventDefault();
+            const num = document.getElementById('input-player-num').value.trim();
+            const name = document.getElementById('input-player-name').value.trim();
+            const status = document.getElementById('select-player-status').value;
+
+            if (!name || !num) return;
+
+            const newPlayer = {
+                id: 'p_' + Date.now(),
+                num: num,
+                name: name,
+                status: status,
+                stats: { g: 0, a: 0, d: 0, p: 0, bp: 0 },
+                playedSeconds: 0
+            };
+
+            state.players.push(newPlayer);
+            closeModal('modal-add-player');
+            saveState();
+            renderAll();
+        }
+
+        function removePlayer(playerId) {
+            if (confirm("Deseja remover este atleta?")) {
+                state.players = state.players.filter(p => p.id !== playerId);
+                saveState();
+                renderAll();
+            }
+        }
+
+        function renderRecentFeed() {
+            const feedBox = document.getElementById('latest-event-box');
+            const feedCount = document.getElementById('feed-count');
+
+            feedCount.textContent = state.events.length;
+
+            if (state.events.length > 0) {
+                const latest = state.events[0];
+                feedBox.innerHTML = `<span class="text-emerald-400 font-bold">${latest.timeFormatted}</span> - ${latest.label}`;
+            } else {
+                feedBox.textContent = "Aguardando início da partida...";
+            }
+        }
+
+        function openFeedModal() {
+            const container = document.getElementById('feed-events-list');
+
+            if (state.events.length === 0) {
+                container.innerHTML = `<div class="text-center text-gray-500 py-6">Nenhum evento registrado.</div>`;
+            } else {
+                container.innerHTML = state.events.map(ev => `
+                    <div class="p-2 bg-gray-950 border border-gray-800 rounded-lg flex items-center justify-between">
+                        <span class="text-gray-300"><b class="text-emerald-400">${ev.timeFormatted}</b> - ${ev.label}</span>
+                    </div>
+                `).join('');
+            }
+
+            openModal('modal-feed');
+        }
+
+        function openReportModal() {
+            let totals = { g: 0, a: 0, d: 0, p: 0, bp: 0 };
+            state.players.forEach(p => {
+                totals.g += p.stats.g;
+                totals.a += p.stats.a;
+                totals.d += p.stats.d;
+                totals.p += p.stats.p;
+                totals.bp += p.stats.bp;
+            });
+
+            document.getElementById('rep-team-g').textContent = totals.g;
+            document.getElementById('rep-team-a').textContent = totals.a;
+            document.getElementById('rep-team-d').textContent = totals.d;
+            document.getElementById('rep-team-p').textContent = totals.p;
+            document.getElementById('rep-team-bp').textContent = totals.bp;
+
+            // Full Consolidated Stats Table
+            const tbody = document.getElementById('rep-players-tbody');
+            tbody.innerHTML = state.players.map(p => `
+                <tr class="hover:bg-gray-900/50">
+                    <td class="py-1.5 font-bold text-white truncate max-w-[120px]">#${p.num} ${p.name}</td>
+                    <td class="text-center text-gray-400">${formatMinOnly(p.playedSeconds || 0)}</td>
+                    <td class="text-center text-emerald-400 font-bold">${p.stats.g}</td>
+                    <td class="text-center text-blue-400">${p.stats.a}</td>
+                    <td class="text-center text-amber-400">${p.stats.d}</td>
+                    <td class="text-center text-indigo-400">${p.stats.p}</td>
+                    <td class="text-center text-red-400">${p.stats.bp}</td>
+                </tr>
+            `).join('');
+
+            // Full Timeline
+            const timeline = document.getElementById('rep-timeline-list');
+            if (state.events.length === 0) {
+                timeline.innerHTML = `<span class="text-gray-500 italic">Nenhum lance gravado.</span>`;
+            } else {
+                timeline.innerHTML = state.events.slice().reverse().map(ev => `
+                    <div class="border-b border-gray-900 pb-1">
+                        <span class="text-emerald-400 font-bold">${ev.timeFormatted}</span>: ${ev.label}
+                    </div>
+                `).join('');
+            }
+
+            openModal('modal-report');
+        }
+
+        function confirmResetAll() {
+            if (confirm("Deseja zerar a partida e reiniciar todas as estatísticas?")) {
+                state.matchStarted = false;
+                state.matchSeconds = 0;
+                state.events = [];
+                state.players.forEach(p => {
+                    p.playedSeconds = 0;
+                    p.stats = { g: 0, a: 0, d: 0, p: 0, bp: 0 };
+                });
+                saveState();
+                renderAll();
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+    </script>
 </body>
 </html>
