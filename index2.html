@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilha Excel Scout - Veios Lokos FC</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        excel: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Estilização para simular visual de células do Excel */
+        .excel-table th {
+            background-color: #1f2937;
+            color: #9ca3af;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid #374151;
+            padding: 8px;
+            user-select: none;
+        }
+        .excel-table td {
+            border: 1px solid #1f2937;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        .excel-table tr:hover td {
+            background-color: #111827;
+        }
+        .excel-input {
+            background: transparent;
+            width: 100%;
+            text-align: center;
+            color: white;
+            outline: none;
+        }
+        .excel-input:focus {
+            background-color: #064e3b;
+            color: #5eead4;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-100 font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- TOP TOOLBAR / EXCEL HEADER -->
+    <header class="bg-gray-900 border-b border-gray-800 p-3 sticky top-0 z-20 shadow-lg">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            
+            <!-- LOGO & FILE STATUS -->
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-excel-700 text-white rounded-lg shadow">
+                    <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                        Scout Excel Analytics <span class="text-[10px] bg-excel-900 text-excel-100 border border-excel-700 px-1.5 py-0.5 rounded">v1.0</span>
+                    </h1>
+                    <p id="file-status-label" class="text-xs text-gray-400 font-mono">Nenhum arquivo carregado</p>
+                </div>
+            </div>
+
+            <!-- FILTROS & RANKINGS RÁPIDOS -->
+            <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-gray-400 uppercase flex items-center gap-1">
+                    <i data-lucide="filter" class="w-3.5 h-3.5 text-amber-400"></i> Ordenar Rank:
+                </label>
+                <select id="select-rank-filter" onchange="applyRankFilter()" 
+                        class="bg-gray-950 border border-gray-700 text-amber-400 font-bold rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500">
+                    <option value="all">📋 Padrão (Sem Rank)</option>
+                    <option value="g">⚽ Artilharia (Mais Gols)</option>
+                    <option value="a">👟 Garçom (Mais Assistências)</option>
+                    <option value="p">🎯 Construção (Mais Passes)</option>
+                    <option value="d">🛡️ Paredão (Mais Defesas)</option>
+                    <option value="time">⏱️ Maior Tempo em Campo</option>
+                    <option value="bp">⚠️ Maior Bolas Perdidas</option>
+                </select>
+            </div>
+
+            <!-- CONTROLES DE ARQUIVO -->
+            <div class="flex items-center gap-2">
+                <!-- Input File Oculto -->
+                <input type="file" id="input-file-json" accept=".json" onchange="handleFileImport(event)" class="hidden">
+                
+                <button onclick="document.getElementById('input-file-json').click()" 
+                        class="px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-emerald-400 font-bold rounded-lg text-xs flex items-center gap-1.5 transition shadow">
+                    <i data-lucide="upload" class="w-4 h-4"></i> Importar Backup / JSON
+                </button>
+
+                <button onclick="exportToCSV()" 
+                        class="px-3 py-2 bg-excel-700 hover:bg-excel-600 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 transition shadow">
+                    <i data-lucide="download" class="w-4 h-4"></i> Exportar para Excel (.CSV)
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- ÁREA DA PLANILHA / TABELAS -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 space-y-4">
+
+        <!-- ABA DE NAVEGAÇÃO ESTILO EXCEL -->
+        <div class="flex border-b border-gray-800 gap-1 font-mono text-xs">
+            <button id="tab-btn-sheet1" onclick="switchTab('sheet1')" class="px-4 py-2 bg-gray-900 text-emerald-400 font-bold border-t-2 border-emerald-500 rounded-t-lg flex items-center gap-1.5">
+                <i data-lucide="table" class="w-3.5 h-3.5"></i> Planilha Geral de Atletas
+            </button>
+            <button id="tab-btn-sheet2" onclick="switchTab('sheet2')" class="px-4 py-2 bg-gray-950 text-gray-500 hover:text-gray-300 rounded-t-lg flex items-center gap-1.5">
+                <i data-lucide="pie-chart" class="w-3.5 h-3.5"></i> Resumo da Equipe
+            </button>
+            <button id="tab-btn-sheet3" onclick="switchTab('sheet3')" class="px-4 py-2 bg-gray-950 text-gray-500 hover:text-gray-300 rounded-t-lg flex items-center gap-1.5">
+                <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> Linha do Tempo de Lances
+            </button>
+        </div>
+
+        <!-- CONTEÚDO DA ABA 1: PLANILHA GERAL -->
+        <section id="tab-content-sheet1" class="space-y-3">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left excel-table">
+                        <thead>
+                            <tr>
+                                <th class="text-center w-12">Pos.</th>
+                                <th class="text-center w-16">Nº</th>
+                                <th>Nome do Atleta</th>
+                                <th class="text-center w-24">Status</th>
+                                <th class="text-center w-28">Tempo em Campo</th>
+                                <th class="text-center w-20 text-emerald-400">Gols (G)</th>
+                                <th class="text-center w-20 text-blue-400">Assist. (A)</th>
+                                <th class="text-center w-20 text-amber-400">Defesas (D)</th>
+                                <th class="text-center w-20 text-indigo-400">Passes (P)</th>
+                                <th class="text-center w-20 text-red-400">B.Perd (BP)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="excel-tbody-players">
+                            <tr>
+                                <td colspan="10" class="text-center py-8 text-gray-500 italic font-sans">
+                                    Nenhum arquivo carregado. Clique em <b>"Importar Backup / JSON"</b> para visualizar os dados.[cite: 3]
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTEÚDO DA ABA 2: RESUMO COLETIVO DA EQUIPE -->
+        <section id="tab-content-sheet2" class="hidden space-y-3">
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl text-center shadow">
+                    <span class="block text-2xl font-black text-emerald-400 font-mono" id="summary-g">0</span>
+                    <span class="text-xs text-gray-400 uppercase font-bold">Total Gols</span>
+                </div>
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl text-center shadow">
+                    <span class="block text-2xl font-black text-blue-400 font-mono" id="summary-a">0</span>
+                    <span class="text-xs text-gray-400 uppercase font-bold">Total Assistências</span>
+                </div>
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl text-center shadow">
+                    <span class="block text-2xl font-black text-amber-400 font-mono" id="summary-d">0</span>
+                    <span class="text-xs text-gray-400 uppercase font-bold">Total Defesas</span>
+                </div>
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl text-center shadow">
+                    <span class="block text-2xl font-black text-indigo-400 font-mono" id="summary-p">0</span>
+                    <span class="text-xs text-gray-400 uppercase font-bold">Total Passes</span>
+                </div>
+                <div class="bg-gray-900 border border-gray-800 p-4 rounded-xl text-center shadow col-span-2 sm:col-span-1">
+                    <span class="block text-2xl font-black text-red-400 font-mono" id="summary-bp">0</span>
+                    <span class="text-xs text-gray-400 uppercase font-bold">Bolas Perdidas</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTEÚDO DA ABA 3: LINHA DO TEMPO DOS EVENTOS -->
+        <section id="tab-content-sheet3" class="hidden space-y-3">
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-2xl">
+                <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-1.5 border-b border-gray-800 pb-2">
+                    <i data-lucide="history" class="w-4 h-4 text-emerald-400"></i> Registro Cronológico de Eventos
+                </h3>
+                <div id="excel-timeline-container" class="space-y-1 font-mono text-xs max-h-[60vh] overflow-y-auto pr-1">
+                    <span class="text-gray-500 italic">Nenhum evento registrado.</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER DA APLICAÇÃO -->
+    <footer class="bg-gray-900 border-t border-gray-800 p-2 text-center text-[11px] text-gray-500 font-mono">
+        Scout Excel View - Compatível com Microsoft Excel, Google Sheets e LibreOffice Calc
+    </footer>
+
+    <script>
+        // Estado Global dos Dados Carregados
+        let activeData = {
+            matchStarted: false,
+            matchSeconds: 0,
+            players: [],
+            events: []
+        };
+
+        window.onload = function() {
+            lucide.createIcons();
+        };
+
+        // Manipula a importação do arquivo JSON gerado pelo sistema
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    activeData = JSON.parse(e.target.result);
+                    document.getElementById('file-status-label').textContent = `Arquivo: ${file.name}`;
+                    renderTable();
+                    renderTeamSummary();
+                    renderTimeline();
+                } catch (err) {
+                    alert('Erro ao ler o arquivo JSON. Certifique-se de que é um arquivo válido exportado do aplicativo.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Renderiza a Tabela Principal (Aba 1)
+        function renderTable() {
+            const tbody = document.getElementById('excel-tbody-players');
+            const rankFilter = document.getElementById('select-rank-filter').value;
+
+            if (!activeData.players || activeData.players.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="text-center py-8 text-gray-500 italic font-sans">
+                            Nenhum jogador encontrado no arquivo.
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            // Clona e aplica a ordenação dinamicamente
+            let sortedPlayers = [...activeData.players];
+
+            if (rankFilter !== 'all') {
+                sortedPlayers.sort((a, b) => {
+                    if (rankFilter === 'time') {
+                        return (b.playedSeconds || 0) - (a.playedSeconds || 0);
+                    } else {
+                        return (b.stats[rankFilter] || 0) - (a.stats[rankFilter] || 0);
+                    }
+                });
+            }
+
+            tbody.innerHTML = sortedPlayers.map((p, idx) => {
+                let badge = `${idx + 1}º`;
+                if (rankFilter !== 'all') {
+                    if (idx === 0) badge = '🥇 1º';
+                    else if (idx === 1) badge = '🥈 2º';
+                    else if (idx === 2) badge = '🥉 3º';
+                }
+
+                return `
+                <tr>
+                    <td class="text-center font-bold text-amber-400">${badge}</td>
+                    <td class="text-center font-bold text-gray-300">#${p.num}</td>
+                    <td class="font-bold text-white">${p.name}</td>
+                    <td class="text-center">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${p.status === 'starter' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-gray-800 text-gray-400'}">
+                            ${p.status === 'starter' ? 'TITULAR' : 'RESERVA'}
+                        </span>
+                    </td>
+                    <td class="text-center font-mono text-emerald-400">${formatMMSS(p.playedSeconds || 0)}</td>
+                    <td class="text-center">
+                        <input type="number" value="${p.stats.g}" onchange="updateStatDirectly('${p.id}', 'g', this.value)" class="excel-input font-bold text-emerald-400">
+                    </td>
+                    <td class="text-center">
+                        <input type="number" value="${p.stats.a}" onchange="updateStatDirectly('${p.id}', 'a', this.value)" class="excel-input font-bold text-blue-400">
+                    </td>
+                    <td class="text-center">
+                        <input type="number" value="${p.stats.d}" onchange="updateStatDirectly('${p.id}', 'd', this.value)" class="excel-input font-bold text-amber-400">
+                    </td>
+                    <td class="text-center">
+                        <input type="number" value="${p.stats.p}" onchange="updateStatDirectly('${p.id}', 'p', this.value)" class="excel-input font-bold text-indigo-400">
+                    </td>
+                    <td class="text-center">
+                        <input type="number" value="${p.stats.bp}" onchange="updateStatDirectly('${p.id}', 'bp', this.value)" class="excel-input font-bold text-red-400">
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        // Permite alterar valores diretamente na célula da planilha
+        function updateStatDirectly(playerId, statKey, val) {
+            const player = activeData.players.find(p => p.id === playerId);
+            if (player) {
+                player.stats[statKey] = parseInt(val) || 0;
+                renderTeamSummary();
+            }
+        }
+
+        // Atualiza a ordenação da planilha
+        function applyRankFilter() {
+            renderTable();
+        }
+
+        // Renderiza o Resumo da Equipe (Aba 2)
+        function renderTeamSummary() {
+            let totals = { g: 0, a: 0, d: 0, p: 0, bp: 0 };
+            if (activeData.players) {
+                activeData.players.forEach(p => {
+                    totals.g += p.stats.g;
+                    totals.a += p.stats.a;
+                    totals.d += p.stats.d;
+                    totals.p += p.stats.p;
+                    totals.bp += p.stats.bp;
+                });
+            }
+
+            document.getElementById('summary-g').textContent = totals.g;
+            document.getElementById('summary-a').textContent = totals.a;
+            document.getElementById('summary-d').textContent = totals.d;
+            document.getElementById('summary-p').textContent = totals.p;
+            document.getElementById('summary-bp').textContent = totals.bp;
+        }
+
+        // Renderiza a Linha do Tempo (Aba 3)
+        function renderTimeline() {
+            const container = document.getElementById('excel-timeline-container');
+            if (!activeData.events || activeData.events.length === 0) {
+                container.innerHTML = `<span class="text-gray-500 italic">Nenhum evento registrado.</span>`;
+                return;
+            }
+
+            container.innerHTML = activeData.events.map(ev => `
+                <div class="p-2 bg-gray-950 border border-gray-800 rounded flex items-center justify-between">
+                    <span class="text-gray-300"><b class="text-emerald-400">${ev.timeFormatted}</b> - ${ev.label}</span>
+                </div>
+            `).join('');
+        }
+
+        // Converte os dados carregados em formato .CSV compatível com Excel
+        function exportToCSV() {
+            if (!activeData.players || activeData.players.length === 0) {
+                alert('Não há dados carregados para exportar.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Numero;Nome;Status;Tempo_Jogo;Gols;Assistencias;Defesas;Passes;Bolas_Perdidas\n";
+
+            activeData.players.forEach(p => {
+                const row = [
+                    `"${p.num}"`,
+                    `"${p.name}"`,
+                    `"${p.status === 'starter' ? 'Titular' : 'Reserva'}"`,
+                    `"${formatMMSS(p.playedSeconds || 0)}"`,
+                    p.stats.g,
+                    p.stats.a,
+                    p.stats.d,
+                    p.stats.p,
+                    p.stats.bp
+                ].join(";");
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `SCOUT_EXCEL_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Utilitário de Tempo
+        function formatMMSS(sec) {
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const s = (sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // Alternador de Abas
+        function switchTab(tabId) {
+            ['sheet1', 'sheet2', 'sheet3'].forEach(id => {
+                document.getElementById(`tab-content-${id}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-btn-${id}`);
+                btn.className = "px-4 py-2 bg-gray-950 text-gray-500 hover:text-gray-300 rounded-t-lg flex items-center gap-1.5";
+            });
+
+            document.getElementById(`tab-content-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            activeBtn.className = "px-4 py-2 bg-gray-900 text-emerald-400 font-bold border-t-2 border-emerald-500 rounded-t-lg flex items-center gap-1.5";
+        }
+    </script>
+</body>
+</html>
